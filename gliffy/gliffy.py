@@ -35,43 +35,52 @@ class Gliffy(object):
         }
     }
 
-    def generate_gliffy_json(self):
-        """
-        Returns a JSON string for use in Gliffy
+    def __init__(self):
+        self.stage = shapes.Stage()
 
-        :return:
+    def __str__(self):
+        return str(self.stage)
+
+    def to_json(self):
+        # type: () -> str
+        """
+        :return: JSON string for use in Gliffy
         :rtype: str
         """
-        stage = self.create_stage()
-        return json.dumps(stage)
+        return str(self)
 
-    def create_stage(self):
-        return shapes.stage.copy()
+    def add_to_stage(self, obj):
+        self.stage.add(obj)
+        return self
 
-    def group(self):
-        g = shapes.Group()
-        return g
+    def make(self, el, **kwargs):
+        # type: (str, dict) -> obj
+        """
+        Makes a basic Gliffy object
 
-    def text(self):
-        t = shapes.Text()
-        return t
+        :param str el:
+        :param dict kwargs:
+        :return:
+        :rtype: object
+        """
 
-    def line(self):
-        l = shapes.Line()
-        return l
+        fn = 'make_' + el
+        # if the function exists
+        if hasattr(self, fn):
+            # get it & call
+            return getattr(self, fn)(**kwargs)
 
-    def rectangle(self):
-        r = shapes.Rectangle()
-        return r
+    def make_group(self, **kwargs):
+        return shapes.Group(**kwargs)
 
-    def create_group(self):
-        return shapes.group.copy()
+    def make_rectangle(self, **kwargs):
+        return shapes.Rectangle(**kwargs)
 
-    def create_rectangle(self):
-        return shapes.rectangle.copy()
+    def make_text(self, **kwargs):
+        return shapes.Text(**kwargs)
 
-    def create_text(self):
-        return shapes.text.copy()
+    def make_line(self, **kwargs):
+        return shapes.Line(**kwargs)
 
-    def create_line(self):
-        return shapes.line.copy()
+    def make_constraint(self, **kwargs):
+        return shapes.Constraint(**kwargs)

@@ -25,19 +25,30 @@ import json
 from gliffy.gliffy import Gliffy
 from utils.dump import dump
 
-pp = PrettyPrinter()
+ppr = PrettyPrinter()
+pp = ppr.pprint
 
 if __name__ == '__main__':
-    print('testing out this sucker')
     g = Gliffy()  # type: Gliffy
 
-    grp = g.group()
-    txt = g.line()
+    '''
+    c = g.make('constraint', kind='startConstraint')
+    print('\n\n')
+    dump(c)
+    print('\n\n')
+    pp(c)
+    print('\n\n')
+    '''
 
+    tomake = ['group', 'rectangle', 'text', 'line', 'constraint']
     print('\n\n')
-    pp.pprint(str(g.text()))
-    print('\n\n')
-    pp.pprint(str(g.rectangle()))
-    print('\n\n')
-    pp.pprint(str(g.line()))
-    print('\n\n')
+    for m in tomake:
+        if m == 'constraint':
+            t = g.make(m, kind='startConstraint')
+        else:
+            t = g.make(m)
+        print('Making {}'.format(m))
+        dump(t)
+        print('\n\n')
+        print(t)
+        print('\n\n')
