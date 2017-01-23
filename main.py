@@ -19,7 +19,6 @@ defined in the stored procedure.
 
 # Standard Library
 from pprint import PrettyPrinter
-import json
 # Third Party
 # Local
 from gliffy.gliffy import Gliffy
@@ -28,18 +27,60 @@ from utils.dump import dump
 ppr = PrettyPrinter()
 pp = ppr.pprint
 
-if __name__ == '__main__':
-    g = Gliffy()  # type: Gliffy
+# if you declare a positional argument & kwargs you can provide the positional argument in the kwargs
 
-    '''
-    c = g.make('constraint', kind='startConstraint')
-    print('\n\n')
-    dump(c)
-    print('\n\n')
-    pp(c)
-    print('\n\n')
-    '''
+"""
+make table
+    - set table name
+        - use this css
+    - add columns
+        - use this css
 
+
+"""
+
+
+class GliffyDB(object):
+
+    gliffy = Gliffy()
+
+    def make_table(self):
+        """
+        Makes the JSON to represent a DB table in Gliffy
+
+        :return:
+        """
+
+        # make group
+        # make container rect
+        # make table name rect
+        # make table name text
+        # for each col
+        #   make col name rect
+        #   make col name text
+
+        grp = self.gliffy.make_group()
+        cont = self.gliffy.make_rectangle()
+
+        grp.add_child(cont)
+
+        return grp
+
+    def get_table_name(self):
+        return 'DAC_DMS_DEFINITION'
+
+    def get_table_cols(self, table=None):
+        return ('ID', 'DMS_TYPE', 'DMS_PROVIDER_ID', 'DMS_DEFINITION_DESCRIPTION', 'CREATED_BY',
+                      'CREATED_TIMESTAMP', 'UPDATED_BY', 'UPDATED_TIMESTAMP')
+
+    def set_table_name(self):
+        pass
+
+    def add_columns(self):
+        pass
+
+
+def test_make():
     tomake = ['group', 'rectangle', 'text', 'line', 'constraint']
     print('\n\n')
     for m in tomake:
@@ -52,3 +93,27 @@ if __name__ == '__main__':
         print('\n\n')
         print(t)
         print('\n\n')
+
+
+def test_table():
+    g = GliffyDB()
+    t = g.make_table()
+
+    print('\n\n')
+    dump(t)
+    print('\n\n')
+    print(t)
+    print('\n\n')
+
+
+if __name__ == '__main__':
+    g = Gliffy()  # type: Gliffy
+
+    var = g.make_group()
+    # test_table()
+    print('\n\n')
+    dump(var)
+    print('\n\n')
+    print(var)
+    print('\n\n')
+

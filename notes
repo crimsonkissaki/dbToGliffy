@@ -1,0 +1,71 @@
+
+Class methods:
+
+
+__new__ -> object (new obj instance of 'cls')
+  - create new instance of class 'cls'
+  - static method; takes class of which an instance was requested as 1st arg
+  - remaining args are those passed to obj constructor expr.
+
+__init__
+  - called after __new__, but before returned to caller
+  - args are those passed to the class constructor
+  - if base class has __init__, derived class's __init__ MUST explicitly call it for proper initialization
+  - b/c __new__ works with __init__ (__new__ creates, __init__ customizes) no non-None value can be returned
+
+__del__
+  - called when instance is about to be destroyed
+  - if base class has __del__, derived class's __del__ MUST explicitly call it for proper deletion
+
+__repr__ -> str
+  - called by repr()
+  - computes 'official' str representation of the obj.
+  - should look like a valid Python expression that could be used to recreate an object with the same value
+  - if not possible, a str like <...some useful description...> should be returned
+  - if class defines __repr__ but ! __str__ then __repr__ is used when 'informal' str value is required
+
+__str__ -> str
+  - called by str(), format(), print()
+  - no expectation that __str__ returns valid Python expression
+
+__bytes__ -> bytes
+  - called by bytes()
+
+__format__ -> str
+  - called by format() & str.format()
+
+__lt__
+__le__
+__eq__
+__ne__
+__gt__
+__ge__
+  - rich comparison methods
+  - x < y => x.__lt__(y)
+  - x <= y => x.__le__(y)
+  - x == y => x.__eq__(y)
+  - x != y => x.__ne__(y)
+  - x > y => x.__gt__(y)
+  - x >= y => x.__ge__(y)
+
+__hash__ -> int
+  - called by hash(), & for ops on members of hashed collections including set, frozenset, & dict
+  - only required propertyis that obj that compare == must have same hash value
+  - advised to mix hash values of comparable components into a tuple & hash the tuple
+    - e.g.  return hash((self.name, self.nick, self.color))
+  - if __eq__ is ! defined it should ! define __hash__
+  - if __eq__ is defined but ! __hash__ instances will not be usable as items in hashable collections
+  - if class defines mutable objs & implements __eq__ it should ! implement __hash__
+    - the implementation of hashable collections requires that a key's hash value is immutable
+  - class overriding __eq__ and ! define __hash__ has it's __hash__ set to None
+    - attempts to get the hash value raise TypeError
+    - will be identified as unhashable when shecking isinstance(obj, collections.Hashable)
+  - if class overriding __eq__ needs to retain parent's __hash__, set __hash__ = <ParentClass>.__hash__
+  - if class ! overriding __eq__ wants to suppress has support, include __hash__ = None in class definition
+    - class defining __hash__ to raise a TypeError will be incorrectly identified as hashable by an
+      isinstance(obj, collections.Hashable) call
+
+__bool__ -> bool
+  - called to implement truth value testing & by bool()
+  - if ! defined __len__ is called (if defined) & obj is True if result is non-zero
+  - if class ! define __len__ or __bool__ all instances considered True

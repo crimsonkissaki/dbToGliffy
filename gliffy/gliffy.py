@@ -7,7 +7,7 @@ import json
 from pprint import PrettyPrinter
 # Third Party
 # Local
-from . import shapes
+from . import basics, graphics, stage
 
 
 # this is going to be ugly as sin as i figure out the best way to set it up
@@ -15,6 +15,12 @@ class Gliffy(object):
     """
     The main Gliffy adapter object.
     """
+
+    # iterator to keep elements numbered
+    node_index = 0
+
+    # z-index of elements
+    order = 0
 
     # formatting options
     font = {
@@ -36,7 +42,7 @@ class Gliffy(object):
     }
 
     def __init__(self):
-        self.stage = shapes.Stage()
+        self.stage = stage.Stage()
 
     def __str__(self):
         return str(self.stage)
@@ -71,11 +77,12 @@ class Gliffy(object):
             return getattr(self, fn)(**kwargs)
 
     def make_group(self, **kwargs):
-        return shapes.Group(**kwargs)
+        return basics.Group(**kwargs)
 
     def make_rectangle(self, **kwargs):
-        return shapes.Rectangle(**kwargs)
+        return graphics.Rectangle(**kwargs)
 
+    """
     def make_text(self, **kwargs):
         return shapes.Text(**kwargs)
 
@@ -84,3 +91,4 @@ class Gliffy(object):
 
     def make_constraint(self, **kwargs):
         return shapes.Constraint(**kwargs)
+    """

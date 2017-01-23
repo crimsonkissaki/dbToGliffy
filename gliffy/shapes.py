@@ -51,214 +51,58 @@ DECOR = {
 }
 
 
-'''
-__new__ -> object (new obj instance of 'cls')
-  - create new instance of class 'cls'
-  - static method; takes class of which an instance was requested as 1st arg
-  - remaining args are those passed to obj constructor expr.
-
-__init__
-  - called after __new__, but before returned to caller
-  - args are those passed to the class constructor
-  - if base class has __init__, derived class's __init__ MUST explicitly call it for proper initialization
-  - b/c __new__ works with __init__ (__new__ creates, __init__ customizes) no non-None value can be returned
-
-__del__
-  - called when instance is about to be destroyed
-  - if base class has __del__, derived class's __del__ MUST explicitly call it for proper deletion
-
-__repr__ -> str
-  - called by repr()
-  - computes 'official' str representation of the obj.
-  - should look like a valid Python expression that could be used to recreate an object with the same value
-  - if not possible, a str like <...some useful description...> should be returned
-  - if class defines __repr__ but ! __str__ then __repr__ is used when 'informal' str value is required
-
-__str__ -> str
-  - called by str(), format(), print()
-  - no expectation that __str__ returns valid Python expression
-
-__bytes__ -> bytes
-  - called by bytes()
-
-__format__ -> str
-  - called by format() & str.format()
-
-__lt__
-__le__
-__eq__
-__ne__
-__gt__
-__ge__
-  - rich comparison methods
-  - x < y => x.__lt__(y)
-  - x <= y => x.__le__(y)
-  - x == y => x.__eq__(y)
-  - x != y => x.__ne__(y)
-  - x > y => x.__gt__(y)
-  - x >= y => x.__ge__(y)
-
-__hash__ -> int
-  - called by hash(), & for ops on members of hashed collections including set, frozenset, & dict
-  - only required propertyis that obj that compare == must have same hash value
-  - advised to mix hash values of comparable components into a tuple & hash the tuple
-    - e.g.  return hash((self.name, self.nick, self.color))
-  - if __eq__ is ! defined it should ! define __hash__
-  - if __eq__ is defined but ! __hash__ instances will not be usable as items in hashable collections
-  - if class defines mutable objs & implements __eq__ it should ! implement __hash__
-    - the implementation of hashable collections requires that a key's hash value is immutable
-  - class overriding __eq__ and ! define __hash__ has it's __hash__ set to None
-    - attempts to get the hash value raise TypeError
-    - will be identified as unhashable when shecking isinstance(obj, collections.Hashable)
-  - if class overriding __eq__ needs to retain parent's __hash__, set __hash__ = <ParentClass>.__hash__
-  - if class ! overriding __eq__ wants to suppress has support, include __hash__ = None in class definition
-    - class defining __hash__ to raise a TypeError will be incorrectly identified as hashable by an
-      isinstance(obj, collections.Hashable) call
-
-__bool__ -> bool
-  - called to implement truth value testing & by bool()
-  - if ! defined __len__ is called (if defined) & obj is True if result is non-zero
-  - if class ! define __len__ or __bool__ all instances considered True
-
-'''
 
 
-# root object for Gliffy files
-class Stage(object):
-    # settable values used in typeDef
-    title = 'GliffyDB'
-    width = 0
-    height = 0
 
-    # json object definition
-    typeDef = {
-        'contentType': 'application/gliffy+json',
-        'version': '1.1',
-        'metadata': {
-            'title': 'GliffyDB',
-            'revision': 0,
-            'exportBorder': 'false'
-        },
-        'embeddedResources': {
-            'index': 0,
-            'resources': []
-        },
-        'stage': {
-            'objects': [
-                # the 'cells' go in here
-            ],
-            'background': '#FFFFFF',
-            'width': 0,  # TODO: this will need to be changed later
-            'height': 0,  # TODO: this will need to be changed later
-            'maxWidth': 5000,
-            'maxHeight': 5000,
-            'nodeIndex': 0,
-            'autoFit': True,
-            'exportBorder': False,
-            'gridOn': True,
-            'snapToGrid': True,
-            'drawingGuidesOn': True,
-            'pageBreaksOn': False,
-            'printGridOn': False,
-            'printPaper': 'LETTER',
-            'printShrinkToFit': False,
-            'printPortrait': True,
-            'shapeStyles': {},
-            'lineStyles': {
-                'global': {
-                    'orthoMode': 1,
-                    'startArrow': 0,
-                    'endArrow': 1,
-                    'stroke': '#000000',
-                    'dashStyle': None
-                }
-            },
-            'textStyles': {},
-            'themeData': None
-        }
-    }
-
-    def __init__(self, **kwargs):
-        self.title = kwargs.get('title', 'GliffyDB')
-        self.width = kwargs.get('width', 0)
-        self.height = kwargs.get('height', 0)
-
-    def __str__(self):
-        self.typeDef['metadata']['title'] = self.title
-        self.typeDef['stage']['width'] = self.width
-        self.typeDef['stage']['height'] = self.height
-
-        return json.dumps(self.typeDef)
-
-    def add(self, obj):
-        # type: (obj) -> Stage
-        """
-        Adds a Gliffy object to the stage
-
-        :param obj obj: The object to add to the stage
-        :return: Stage instance
-        :rtype: Stage
-        """
-        if isinstance(obj, Entity):
-            self.typeDef['stage']['objects'].append(obj)
-        else:
-            raise Exception('Unable to add invalid object type "{}" to Stage'.format(type(obj)))
-
-        return self
-
-
-class Entity(object):
-    typeDef = {
-        'x': 0,
-        'y': 0,
-        'rotation': 0,
-        'id': 0,
-        'uid': None,
-        'width': 0,
-        'height': 0,
-        'lockAspectRatio': False,
-        'lockShape': False,
-        'order': 0,
-        'graphic': None,
-        'children': [],
-        'linkMap': [],
-    }
-
-    def __str__(self):
-        return json.dumps(self.typeDef)
-
-    def add_child(self, child):
-        self.typeDef['children'].append(child)
-
-
-# group to hold multiple objects together
-class Group(Entity):
+class Graphic(GliffyObject):
+    type = None
+    type_def = {}
+    base = None
 
     def __init__(self):
-        self.typeDef['uid'] = 'com.gliffy.shape.basic.basic_v1.default.group'
-
-
-class Graphic(object):
-    type = None
-    typeDef = {}
+        self.base = BaseEntity()
 
     def __str__(self):
-        return json.dumps({'type': self.type, self.type: self.typeDef})
+        return json.dumps({'type': self.type, self.type: self.get_data()})
 
     def get_uid(self):
-        return None
+        """
+        Returns the uid needed by the BaseEntity
+
+        Returning false means "don't change it"
+        Returning anything else means "set it to this"
+
+        :return: False
+        :rtype: bool
+        """
+        return False
+
+    def get_data(self):
+        raise Exception('Graphic object has no get_data() method defined')
 
 
 # #cccccc is gray
 
 # basic rectangle
+# this will need to be added as an Entity.graphic child
 class Rectangle(Graphic):
-    type = 'Shape'
-    typeDef = {
-        'tid': 'com.gliffy.stencil.rectangle.basic_v1',
+
+    # holds merged default + user-supplied CSS options
+    opts = {
         'strokeWidth': 1,
         'strokeColor': '#000000',
         'fillColor': '#ffffff',
+    }
+
+    # type of Gliffy object
+    type = 'Shape'
+
+    # Gliffy JSON definition data
+    type_def = {
+        'tid': 'com.gliffy.stencil.rectangle.basic_v1',
+        'strokeWidth': 0,
+        'strokeColor': '',
+        'fillColor': '',
         'gradient': False,
         'dropShadow': False,
         'state': 0,
@@ -267,13 +111,59 @@ class Rectangle(Graphic):
         'opacity': 1
     }
 
-    def get_uid(self):
-        # type: () -> str
+    def __init__(self, opts={}):
+        # type: (dict) -> Rectangle
         """
-        :return: The uid needed by the Entity
+        Creates a new Gliffy Rectangle object
+
+        :param dict opts: Options for styling the Rectangle
+                          Valid options are ``strokeWidth`` (``int``), ``strokeColor`` & ``fillColor`` (``hex``)
+        :rtype: Rectangle
+        """
+        super().__init__()
+        self.set_opts(opts)
+        self.base.set_graphic(self)
+
+    def get_uid(self):
+        return 'com.gliffy.shape.erd.erd_v1.default.entity'
+
+    def get_type(self):
+        return self.type
+
+    def get_type_def(self):
+        self.type_def = merge_dicts(self.type_def, self.opts)
+
+
+    def set_opts(self, opts={}):
+        # type: (dict) -> Rectangle
+        if opts:
+            tmp = merge_dicts(self.opts, opts)
+            self.opts = tmp
+
+        return self
+
+    def to_json(self):
+        """
+        Returns the whole JSON data set for the Rectangle, including the
+        outer BaseEntity code
+
         :rtype: str
         """
-        return 'com.gliffy.shape.erd.erd_v1.default.entity'
+
+        return self.type_def
+
+
+# css used in text.graphic.Text.html
+_textCSS = {
+    'text-align': 'left',  # left, center, right
+    'font-size': '12px',
+    'font-family': 'Courier',
+    'white-space': 'pre-wrap',
+    'text-decoration': 'none',
+    'font-style': 'none',
+    'line-height': '12px',  # should = font-size
+    'color': 'rgb(0, 0, 0)'
+}
 
 
 class Text(Graphic):
@@ -295,9 +185,11 @@ class Text(Graphic):
 class Line(Graphic):
     type = 'Line'
     typeDef = {
+
         'strokeWidth': 2,
         'strokeColor': '#000000',
         'fillColor': 'none',
+
         'dashStyle': None,
         'startArrow': 0,
         'endArrow': 0,
@@ -319,7 +211,7 @@ class Line(Graphic):
         return 'com.gliffy.shape.basic.basic_v1.default.line'
 
 
-class Constraint(object):
+class Constraint(GliffyObject):
     _kind_map = {
         'startConstraint': 'StartPositionConstraint',
         'endConstraint': 'EndPositionConstraint',
@@ -380,17 +272,6 @@ class Constraint(object):
     '''
 
 
-# css used in text.graphic.Text.html
-_textCSS = {
-    'text-align': 'left',  # left, center, right
-    'font-size': '12px',
-    'font-family': 'Courier',
-    'white-space': 'pre-wrap',
-    'text-decoration': 'none',
-    'font-style': 'none',
-    'line-height': '12px',  # should = font-size
-    'color': 'rgb(0, 0, 0)'
-}
 
 _line = {
     'x': 0,
