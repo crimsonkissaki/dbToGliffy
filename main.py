@@ -23,6 +23,8 @@ from pprint import PrettyPrinter
 # Local
 from gliffy.gliffy import Gliffy
 from utils.dump import dump
+from utils import util
+from gliffy import entity, graphic
 
 ppr = PrettyPrinter()
 pp = ppr.pprint
@@ -95,25 +97,39 @@ def test_make():
         print('\n\n')
 
 
-def test_table():
-    g = GliffyDB()
-    t = g.make_table()
-
-    print('\n\n')
-    dump(t)
-    print('\n\n')
-    print(t)
-    print('\n\n')
-
-
-if __name__ == '__main__':
+def test():
     g = Gliffy()  # type: Gliffy
-
     var = g.make_group()
     # test_table()
     print('\n\n')
     dump(var)
     print('\n\n')
     print(var)
+    print('\n\n')
+
+
+def t2(*args):
+    for k, v in args:
+        print('k = {}, v = {}'.format(k, v))
+
+
+if __name__ == '__main__':
+    g = Gliffy()
+    grp = g.make_group()
+    g.add_to_stage(grp)
+
+    rect = g.make_rectangle()
+    grp.add_child(rect)
+
+    txt = g.make_text({'text': 'Testing 123'})
+    rect.add_child(txt)
+
+    var = g.to_json()
+
+    print('\n\n')
+    print('STAGE:')
+    dump(rect)
+    print('\n\n')
+    print(rect.to_json())
     print('\n\n')
 

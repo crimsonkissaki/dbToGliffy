@@ -4,10 +4,13 @@
 
 # Standard Library
 import json
-from pprint import PrettyPrinter
 # Third Party
 # Local
-from . import basics, graphics, stage
+from . import stage, base, entity, graphic
+from .base import GliffyObject
+from .stage import Stage
+from .entity import Entity, Group
+from .graphic import Rectangle, Text
 
 
 # this is going to be ugly as sin as i figure out the best way to set it up
@@ -16,36 +19,25 @@ class Gliffy(object):
     The main Gliffy adapter object.
     """
 
-    # iterator to keep elements numbered
-    node_index = 0
-
-    # z-index of elements
-    order = 0
-
-    # formatting options
-    font = {
-        'default': {
-            'size': '12px',
-            'font': 'Courier',
-            'color': '#000000',
-            'align': 'center'
-        },
-        'table_name': {
-            'size': '14px',
-        },
-        'column_name': {
-            'align': 'left'
-        },
-        'data_type': {
-            'color': '#ff0000'
-        }
-    }
-
     def __init__(self):
-        self.stage = stage.Stage()
+        self.stage = Stage()
+        # iterator to keep elements numbered
+        self.node_index = 0
+        # z-index of elements
+        self.order = 0
+        # set of all defined Gliffy objects
+        self.defined_objects = ()
 
     def __str__(self):
-        return str(self.stage)
+        return self.to_json()
+
+    def add_to_stage(self, child):
+        # type: (GliffyObject) -> Gliffy
+        if not isinstance(child, GliffyObject):
+            raise TypeError('Only GliffyObjects can be added to the stage.')
+        self.stage.add_child(child)
+
+        return self
 
     def to_json(self):
         # type: () -> str
@@ -53,39 +45,39 @@ class Gliffy(object):
         :return: JSON string for use in Gliffy
         :rtype: str
         """
-        return str(self)
+        return self.stage.to_json()
 
-    def add_to_stage(self, obj):
-        self.stage.add(obj)
-        return self
+    def make_entity(self):
+        return Entity()
 
-    def make(self, el, **kwargs):
-        # type: (str, dict) -> obj
+    def make_group(self):
+        return Group()
+
+    def make_rectangle(self, properties={}):
+        # type: (dict) -> Entity
         """
-        Makes a basic Gliffy object
-
-        :param str el:
-        :param dict kwargs:
-        :return:
-        :rtype: object
+        :param dict properties:
+        :return: Entity with a Rectangle graphic
+        :rtype: Entity
         """
+        ent = self.make_entity()
+        ent.set_graphic(Rectangle(properties))
 
-        fn = 'make_' + el
-        # if the function exists
-        if hasattr(self, fn):
-            # get it & call
-            return getattr(self, fn)(**kwargs)
+        return ent
 
-    def make_group(self, **kwargs):
-        return basics.Group(**kwargs)
+    def make_text(self, properties={}):
+        # type: (dict) -> Entity
+        """
+        :param dict properties:
+        :return: Entity with a Text graphic
+        :rtype: Entity
+        """
+        ent = self.make_entity()
+        ent.set_graphic(Text(properties))
 
-    def make_rectangle(self, **kwargs):
-        return graphics.Rectangle(**kwargs)
+        return ent
 
     """
-    def make_text(self, **kwargs):
-        return shapes.Text(**kwargs)
-
     def make_line(self, **kwargs):
         return shapes.Line(**kwargs)
 
