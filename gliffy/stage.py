@@ -70,8 +70,20 @@ class Stage(GliffyObject):
     def add(self, child):
         # type: (Entity) -> Stage
         self.children.append(child)
+        self.reorder_children()
+        self.update_coordinates()
+        self.update_sizes()
 
         return self
+
+    def reorder_children(self):
+        pass
+
+    def update_coordinates(self):
+        pass
+
+    def update_sizes(self):
+        pass
 
     def get_type_def(self):
         # type: () -> dict
