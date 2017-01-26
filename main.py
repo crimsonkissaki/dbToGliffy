@@ -24,27 +24,21 @@ from pprint import PrettyPrinter
 from gliffy.gliffy import Gliffy
 from utils.dump import dump
 from utils import util
-from gliffy import entity, graphic
 
 ppr = PrettyPrinter()
 pp = ppr.pprint
 
 # if you declare a positional argument & kwargs you can provide the positional argument in the kwargs
 
-"""
-make table
-    - set table name
-        - use this css
-    - add columns
-        - use this css
-
-
-"""
-
 
 class GliffyDB(object):
 
-    gliffy = Gliffy()
+    tn_cell_style = {'strokeWidth': 1, 'strokeColor': '#000000'}
+    tn_text_style = {'text': '', 'css': {'font-size': '14px', 'font-family': 'Courier', 'bold': True}}
+    cn_cell_style = {'strokeWidth': 1, 'strokeColor': '#cccccc'}
+    cn_text_style = {'text': '', 'css': {'font-size': '12px', 'font-family': 'Courier'}}
+
+    g = Gliffy()
 
     def make_table(self):
         """
@@ -61,12 +55,27 @@ class GliffyDB(object):
         #   make col name rect
         #   make col name text
 
-        grp = self.gliffy.make_group()
-        cont = self.gliffy.make_rectangle()
+        #grp = self.g.group()
+        #self.g.add(grp)
+        cont = self.g.rectangle({'strokeColor': '#000000', 'fillColor': 'none'})
+        # grp.add_child(cont)
+        self.g.add(cont)
 
-        grp.add_child(cont)
+        '''
+        tnts = self.tn_text_style.copy()
+        tnts['text'] = self.get_table_name()
+        tn = self.make_cell(self.tn_cell_style, tnts)
+        cont.add_child(tn)
 
-        return grp
+        cols = self.get_table_cols()
+        cnts = self.cn_text_style.copy()
+        for col in cols:
+            cnts['text'] = col
+            cn = self.make_cell(self.cn_cell_style, cnts)
+            cont.add_child(cn)
+        '''
+
+        return str(self.g)
 
     def get_table_name(self):
         return 'DAC_DMS_DEFINITION'
@@ -75,61 +84,23 @@ class GliffyDB(object):
         return ('ID', 'DMS_TYPE', 'DMS_PROVIDER_ID', 'DMS_DEFINITION_DESCRIPTION', 'CREATED_BY',
                       'CREATED_TIMESTAMP', 'UPDATED_BY', 'UPDATED_TIMESTAMP')
 
-    def set_table_name(self):
-        pass
+    def make_cell(self, cell_props, text_props):
+        r = self.g.rectangle(cell_props)
+        t = self.g.text(text_props)
+        r.add_child(t)
 
-    def add_columns(self):
-        pass
-
-
-def test_make():
-    tomake = ['group', 'rectangle', 'text', 'line', 'constraint']
-    print('\n\n')
-    for m in tomake:
-        if m == 'constraint':
-            t = g.make(m, kind='startConstraint')
-        else:
-            t = g.make(m)
-        print('Making {}'.format(m))
-        dump(t)
-        print('\n\n')
-        print(t)
-        print('\n\n')
+        return r
 
 
-def test():
-    g = Gliffy()  # type: Gliffy
-    var = g.make_group()
-    # test_table()
-    print('\n\n')
-    dump(var)
-    print('\n\n')
-    print(var)
-    print('\n\n')
-
-
-def t2(*args):
-    for k, v in args:
-        print('k = {}, v = {}'.format(k, v))
+def save_to_file(data):
+    f = open('output.gliffy', 'w')
+    f.write(data)
+    f.close()
 
 
 if __name__ == '__main__':
-    g = Gliffy()
-    grp = g.make_group()
-    g.add_to_stage(grp)
+    # test()
+    gdb = GliffyDB()
 
-    rect = g.make_rectangle()
-    grp.add_child(rect)
-
-    txt = g.make_text({'text': 'Testing 123'})
-    rect.add_child(txt)
-
-    var = g.to_json()
-
-    print('\n\n')
-    print('STAGE:')
-    dump(rect)
-    print('\n\n')
-    print(rect.to_json())
-    print('\n\n')
+    save_to_file(gdb.make_table())
 
