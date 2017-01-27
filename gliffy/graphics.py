@@ -8,7 +8,7 @@ from collections import OrderedDict
 # Third Party
 # Local
 from .base import GliffyObject
-from utils import util
+from utils import util, validate
 
 
 class Graphic(GliffyObject):
@@ -17,6 +17,9 @@ class Graphic(GliffyObject):
     """
 
     __slots__ = ('type_def', 'graphic_type', 'properties')
+
+    defaults = {}
+    bad_val_err = '\n\n----- @@@ ERROR: Invalid `({}) {}` value `{}` -----\n\n'
 
     # tid value used in the graphic type def
     tids = {
@@ -49,6 +52,32 @@ class Graphic(GliffyObject):
         }
         # the modifiable Graphic properties - will be defined in child classes
         self.properties = {}
+
+    def check_values(self, dic, keys, data_type, convert=False):
+        # type: (dict, list, Any, bool) -> None
+        """
+        Simplified value checker.
+
+        :param dict dic: The dict to check values in
+        :param list keys: The keys to check in the dict
+        :param Any data_type: The data type to check. Mostly built-in types (int, str, bool, etc)
+        :param bool convert: Flag to (en|dis)able attempted conversions
+        :rtype: None
+        """
+        if not dic:
+            return
+        hex_check = False
+        if data_type == 'hex':
+            hex_check = True
+            data_type = str
+        for k in keys:
+            valid = validate.in_dict_as_type(dic, k, data_type, convert)
+            if valid is False:
+                print(self.bad_val_err.format(data_type.__name__, k, keys[k]))
+                dic[k] = self.defaults[k]
+            elif valid is not None:
+                if hex_check and not dic[k].startswith('#'):
+                    dic[k] = '#'+dic[k][0:6]
 
     @property
     def graphic_tid(self):
@@ -85,6 +114,13 @@ class Shape(Graphic):
 
     __slots__ = ('graphic_type', 'type_def', 'properties')
 
+    # default property values - these are Class properties & can be set without having a Shape instance
+    defaults = {
+        'strokeWidth': 2,
+        'strokeColor': '#000000',
+        'fillColor': '#FFFFFF',
+    }
+
     def __init__(self, graphic_type, graphic_props={}):
         # type: (str, dict) -> Shape
         """
@@ -115,13 +151,21 @@ class Shape(Graphic):
                 ('opacity', 1)
             ]))
         ])
-        self.properties = {
-            'strokeWidth': 2,
-            'strokeColor': '#000000',
-            'fillColor': '#FFFFFF',
-        }
+        self.properties = self.defaults.copy()
         self.set_properties(graphic_props)
         self.type_def['Shape']['tid'] = self.graphic_tid
+
+    def validate_properties(self, props={}):
+        # type: (dict) -> None
+        """
+        Validates user-supplied properties to be applied to the Shape Graphic.
+
+        Invalid values will be replaced by the defaults.
+        """
+        if not props:
+            return
+        self.check_values(props, ['strokeWidth'], int, True)
+        self.check_values(props, ['strokeColor', 'fillColor'], 'hex', True)
 
     def set_properties(self, props):
         # type: (dict) -> Shape
@@ -131,8 +175,37 @@ class Shape(Graphic):
 
 
 class Text(Graphic):
+    """
+    A Gliffy Graphic that is used to display text.
+
+    You can override the default values without instantiating the object by
+    manually setting ``graphic.Text.defaults`` before any are created.
+    """
 
     __slots__ = ('graphic_type', 'type_def', 'properties')
+
+    # valid property values
+    valid = {
+        'text-align': ('left', 'middle', 'right'),
+        'font-family': ('Arial', 'Helvetica', 'Courier', 'Times', 'Verdana'),
+        'font-size': ('9px', '10px', '11px', '12px', '13px', '14px', '18px', '24px', '36px', '48px'),
+    }
+    # default property values - these are Class properties & can be set without having a Text instance
+    defaults = {
+        'color': '#000000',
+        'text-align': 'middle',
+        'font-family': 'Courier',
+        'font-size': '12px',
+        'bold': False,
+        'italic': False,
+        'underline': False,
+        'paddingVert': 2,
+        'paddingHoriz': 2,
+        'paddingLeft': 2,
+        'paddingRight': 2,
+        'paddingBottom': 2,
+        'paddingTop': 2,
+    }
 
     def __init__(self, properties={}):
         # type: (dict) -> Text
@@ -145,12 +218,16 @@ class Text(Graphic):
         :keyword css:   (:py:class:`dict`) CSS settings to apply to the text.\n
                         Valid properties are:\n
                         (:py:class:`str`):
-                            ``text-align``  (left, middle, right)\n
-                            ``font-size``   (9-14px, 18px, 24px, 36px, 48px)\n
-                            ``font-family`` (Arial, Helvetica, Courier, Times, Verdana)\n
-                            ``color``       (#xxxxxx)\n
+                            ``text-align``  left, middle, right (Default middle)\n
+                            ``font-size``   9-14px, 18px, 24px, 36px, 48px (Default 12px)\n
+                            ``font-family`` Arial, Helvetica, Courier, Times, Verdana (Default Courier)\n
+                            ``color``       #xxxxxx (Default #000000)\n
                         (:py:class:`bool`):
                             ``bold``, ``italic``, ``underline``
+                        (:py:class:`int`):
+                            ``paddingLeft``, ``paddingRight``, ``paddingBottom``, ``paddingTop``
+                            ``paddingVert`` (sets ``paddingTop`` & ``paddingBottom``)
+                            ``paddingHoriz`` (sets ``paddingLeft`` & ``paddingRight``)
         :rtype: Text
         """
         super().__init__()
@@ -164,29 +241,72 @@ class Text(Graphic):
                 ('vposition', 'none'),
                 ('hposition', 'none'),
                 ('html', '<p><span></span></p>'),
-                ('paddingLeft', 2),
-                ('paddingRight', 2),
-                ('paddingBottom', 2),
-                ('paddingTop', 2)
+                ('paddingLeft', 0),
+                ('paddingRight', 0),
+                ('paddingBottom', 0),
+                ('paddingTop', 0)
             ]))
         ])
         # customizable Text settings
         self.properties = {
             # the text to show
             'text': '',
-            'css': {
-                'text-align': 'center',
-                'font-size': '12px',
-                'font-family': 'Courier',
-                'color': '#000000',
-                'bold': False,
-                'italic': False,
-                'underline': False,
-            },
+            'css': self.defaults.copy(),
         }
         self.set_properties(properties)
 
+    def set_properties(self, props={}):
+        # type: (dict) -> Text
+        """
+        Updates the Text Graphic's properties with supplied values.
+
+        Invalid property values will fail silently and be replaced with the default values
+
+        :param dict props: Properties to assign to the Text
+        :return: Text Entity for method chaining
+        :rtype: Text
+        """
+        if not props:
+            return self
+
+        self.validate_properties(props)
+        css = self.properties['css']
+        if css['paddingVert']:
+            css['paddingTop'] = css['paddingBottom'] = css['paddingVert']
+        if css['paddingHoriz']:
+            css['paddingLeft'] = css['paddingRight'] = css['paddingHoriz']
+
+        util.join_dicts(self.properties, props)
+        self._set_html()
+
+        return self
+
+    def validate_properties(self, props={}):
+        # type: (dict) -> None
+        """
+        Validates user-supplied properties to be applied to the Text Graphic.
+
+        Invalid values will be replaced by the defaults.
+        """
+        if not props:
+            return
+        if 'css' in props:
+            props = props['css']
+
+        # f = {k: 'bork' for k in c.keys() & d.keys() if c[k] != d[k]}
+        for v in self.valid.keys() & props.keys():  # intersection
+            if props[v] not in self.valid[v]:
+                print(self.bad_val_err.format('css', v, props[v]))
+                props[v] = self.defaults[v]
+        self.check_values(props, ['color'], 'hex', True)
+        self.check_values(props, ['bold', 'italic', 'underline'], bool, True)
+        self.check_values(props, ['padding' + k for k in ['Vert', 'Horiz', 'Top', 'Bottom', 'Left', 'Right']], int, True)
+
     def _set_html(self):
+        # type: () -> None
+        """
+        Sets the Text Graphic's ``html`` property based on supplied/default CSS settings
+        """
         txt = self.properties['text']
         css = self.properties['css']
 
@@ -203,18 +323,16 @@ class Text(Graphic):
 
         self.type_def['Text']['html'] = '<p style=\'{}\'><span style=\'{}\'>{}</span></p>'.format(p_css, span_css, txt)
 
-    def set_properties(self, props):
-        # type: (dict) -> Text
-        util.join_dicts(self.properties, props)
-        self._set_html()
-
-        return self
-
 
 # this class requires constraints be added
 class Line(Graphic):
 
     __slots__ = ('graphic_type', 'type_def', 'properties')
+
+    defaults = {
+        'strokeWidth': 2,
+        'strokeColor': '#000000',
+    }
 
     def __init__(self, properties={}):
         # type: (dict) -> Line
@@ -231,7 +349,7 @@ class Line(Graphic):
         self.type_def = {
             'type': 'Line',
             'Line': {
-                'strokeWidth': 2,
+                'strokeWidth': 0,
                 'strokeColor': '#000000',
                 'fillColor': 'none',
                 'dashStyle': None,
@@ -253,8 +371,21 @@ class Line(Graphic):
         }
         self.set_properties(properties)
 
+    def validate_properties(self, props={}):
+        # type: (dict) -> None
+        """
+        Validates user-supplied properties to be applied to the Line Graphic.
+
+        Invalid values will be replaced by the defaults.
+        """
+        if not props:
+            return
+        self.check_values(props, ['strokeWidth'], int, True)
+        self.check_values(props, ['strokeColor'], 'hex', True)
+
     def set_properties(self, props):
         # type: (dict) -> Line
+        self.validate_properties(props)
         util.join_dicts(self.type_def['Line'], self.properties, props)
 
         return self

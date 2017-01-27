@@ -7,14 +7,21 @@
 # Local
 from .base import GliffyObject
 from .stage import Stage
-from .entity import Entity, Group
-from .graphic import Shape, Text, Line
+from .entities import Entity, Group
+from .graphics import Shape, Text, Line
 
 
 # this is going to be ugly as sin as i figure out the best way to set it up
 class Gliffy(object):
     """
-    The main Gliffy adapter object.
+    The main Gliffy facade object.
+
+    NOTES:
+
+        Outputting the right JSON is only 1/2 of the job. Gliffy files will not load properly
+        unless the entity x/y coords & width/height values are also set.
+
+        Properly sizing/positioning automatically generated objects can be somewhat of a pain.
     """
 
     __slots__ = 'stage'
@@ -26,6 +33,47 @@ class Gliffy(object):
     def __str__(self):
         # type: () -> str
         return self.to_json()
+
+    def entity(self):
+        # type: () -> Entity
+        """
+        Creates a base Entity object which can be explicitly customized as you wish.
+
+        You only need to use this is you want to exert precise control over the construction
+        of a Gliffy object.
+
+        If you want to assign a graphic to this Entity you will have to manually create one
+        via the ``graphic()`` method, and manually assign it to the Entity via ``Entity.set_graphic()``
+
+        :return: A base Entity object with no graphic or children.
+        :rtype: Entity
+        """
+        return Entity()
+
+    def graphic(self, graphic_type='', graphic_props={}):
+        # type: (str, dict) -> Graphic
+        """
+        Creates a raw Graphic object that can be assigned to an Entity via ``Entity.set_graphic()``
+
+        :param str graphic_type: Type of Graphic to create. E.g. Rectangle, Text, Line, etc.
+        :param dict graphic_props: Properties to apply to the Graphic
+        :return: A raw Graphic object for use in an Entity
+        :rtype: Graphic
+        """
+        if not graphic_type:
+            raise ValueError('The `graphic` method requires a valid Graphic type.')
+
+        graphic = None
+        # standardize for comparison
+        graphic_type = graphic_type.capitalize()
+        if graphic_type == 'Text':
+            graphic = Text(graphic_props)
+        elif graphic_type == 'Line':
+            graphic = Line(graphic_props)
+        else:
+            graphic = Shape(graphic_type, graphic_props)
+
+        return graphic
 
     def group(self):
         # type: () -> Group
@@ -74,20 +122,16 @@ class Gliffy(object):
         """
         return Entity('text', properties)
 
-    def add(self, child):
-        # type: (Entity) -> Gliffy
+    def add(self, children):
+        # type: (Any) -> Gliffy
         """
-        Adds a Gliffy Entity object to the 'Stage', allowing it to be viewed/manipulated
+        Adds a single Entity or list of Entities to the 'Stage', allowing them to be viewed/manipulated
 
-        :param Entity child: The Entity to add to the 'stage'
-        :return: Returns the Gliffy object for method chaining
+        :param Any children: Single Entity or :py:class:`list` of Entities
         :rtype: Gliffy
         :raises: :py:class:`TypeError`
         """
-        if not isinstance(child, GliffyObject):
-            raise TypeError('Only GliffyObjects can be added to the stage.')
-
-        self.stage.add(child)
+        self.stage.add(list(children))
 
         return self
 

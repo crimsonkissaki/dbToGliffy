@@ -3,8 +3,18 @@
 """
 
 # Standard Library
+import inspect
 # Third Party
 # Local
+
+
+def dump_args(frame):
+    # frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    print('function name "%s"' % inspect.getframeinfo(frame)[2])
+    for i in args:
+        print("    %s = %s" % (i, values[i]))
+    return [(i, values[i]) for i in args]
 
 
 def dump(data, dunder=False):

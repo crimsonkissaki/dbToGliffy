@@ -19,11 +19,13 @@ defined in the stored procedure.
 
 # Standard Library
 from pprint import PrettyPrinter
+from collections import OrderedDict
 # Third Party
 # Local
 from gliffy.gliffy import Gliffy
 from utils.dump import dump
 from utils import util
+from gliffy import graphics, entities
 
 ppr = PrettyPrinter()
 pp = ppr.pprint
@@ -98,9 +100,60 @@ def save_to_file(data):
     f.close()
 
 
+def blah():
+    one = 'oops'
+    two = 'blarg'
+
+    return one, two
+
+
 if __name__ == '__main__':
     # test()
-    gdb = GliffyDB()
+    # gdb = GliffyDB()
+    # save_to_file(gdb.make_table())
+    # graphic.Text.default_family = 'Helvetica'
 
-    save_to_file(gdb.make_table())
+    tn_css = {'strokeWidth': 1, 'strokeColor': '#000000'}
+    tn_text_css = {'text': 'table name', 'css': {'font-size': '14px', 'font-family': 'Courier', 'bold': True}}
+    cn_css = {'strokeWidth': 1, 'strokeColor': '#cccccc'}
+    cn_text_css = {'text': 'column name', 'css': {'font-size': '12px', 'font-family': 'Courier'}}
+
+    g = Gliffy()
+    grp = g.group()
+    rect = g.rectangle({'fillColor': 'none'})
+    grp.add_child(rect)
+
+    txt = g.text(tn_text_css)
+    grp.add_child(txt)
+
+    rect2 = g.rectangle(cn_css)
+
+    g.add([grp, rect2])
+
+    print('\n\n')
+    dump(g.stage)
+    print('\n\n')
+
+    save_to_file(str(g))
+
+    '''
+    t = graphic.Text()
+    tprops = {'color': '123456789', 'font-family': 'Wingdings', 'bold': 'TrUe', 'italic': 'bork', 'paddingTop': '3', }
+    t.validate_properties(tprops)
+    print('\n\n', 'props now:', tprops)
+    print('\n\n')
+
+    r = graphic.Shape('rectangle')
+    rprops = {
+        'strokeWidth': '2',
+        'strokeColor': '0000',
+        'fillColor': 'FFFFFFFFFaasdfasdfasdfFF',
+    }
+    r.validate_properties(rprops)
+    print('\n\n', 'props now:', rprops)
+    print('\n\n')
+    '''
+
+    # t.set_properties({'font-family': 'Wingdings', 'bold': 'qwerty', 'paddingTop': '3', })
+    # print('\n\n', dump(t), '\n\n')
 

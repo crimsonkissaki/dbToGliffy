@@ -37,16 +37,33 @@ def join_dicts(*dicts):
     """
     Recursively updates the first dict 'in place' with values from subsequent dicts if they have the same key.
 
+    If the dicts have sub-dicts with the same key those will be updated in the same manner.
+
     The value from the last dict the key is found in (if any) becomes the final value
     of the key in the first dict.
 
-    :param tuple dicts: Dicts to merge
-    :return:
-    :rtype: dict
+    Example::
+
+        a = { 'one': '1.a', 'two': '2.a', 'three': { 't_one': '3.1.a', 't_two': '3.2.a' } }
+        b = { 'one': '1.b', 'three': { 't_one': '3.1.b', 't_three': '3.3.b' } }
+        c = { 'two': '2.c', 'three': { 't_two': '3.2.c', 't_three': '3.3.c' } }
+
+        join_dicts(a, b)
+            a = { 'one': '1.b', 'two': '2.a', 'three': { 't_one': '3.1.b', 't_two': '3.2.a' } }
+
+        join_dicts(a, b, c)
+            a = { 'one': '1.b', 'two': '2.c', 'three': { 't_one': '3.1.b', 't_two': '3.2.c' } }
+
+
+    :param tuple dicts: Dicts to merge. The first dict is updated 'in place'
+    :raises: :py:class:`ValueError`
     """
+    # have to make sure all arguments are dicts to prevent KeyErrors
+    if any(not isinstance(d, dict) for d in dicts):
+        raise ValueError('`join_dicts` can only process dict-like objects.')
+
     # the only values that matter in the end are the ones in the right-most dicts
     # looping over them in 'right -> left' order saves time
-    # TODO: how MUCH time does it save???
     dicts = list(dicts)
     res = dicts.pop(0)
     dicts.reverse()
@@ -61,27 +78,22 @@ def join_dicts(*dicts):
     def _find_key(_key, _dicts):
         # type: (str, list) -> Any
         for _d in _dicts:
-            if not isinstance(_d, dict):
-                # you could raise here, but what if the dict has a 'none' value for the key that needs to be moved?
-                continue
-            if _key in _d:
+            if isinstance(_d, dict) and _key in _d:
                 return _d[_key]
         raise ValueError('no value')
 
     for key in res:
         try:
-            # if isinstance(res[key], dict) and isinstance(new_val, dict):
             if isinstance(res[key], dict):
-                # need to grab all the sub-dicts from each of the remaining dicts
-                # and un-reverse them so they will be handled properly
-                dicts_key = [d[key] for d in dicts if d[key]]
+                # grab sub-dicts from remaining dicts & un-reverse so they're handled properly
+                dicts_key = [d[key] for d in dicts if key in d]
                 dicts_key.reverse()
                 join_dicts(res[key], *dicts_key)
             else:
                 res[key] = _find_key(key, dicts)
         except ValueError:
             continue
-
-    return res
-
+        except KeyError:
+            print('\n\n', 'KeyError in join_dicts:\n-------------------------\n', 'args: ', dicts, '\n\n')
+            raise
 
