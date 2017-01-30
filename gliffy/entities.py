@@ -20,33 +20,43 @@ class Entity(GliffyObject):
 
     # limit the instance variables created; no __dict__ or __weakref__ to save RAM
     # you have to set the variables in __init__ if you define this
-    __slots__ = ('graphic', 'children', 'type_def')
+    __slots__ = ('settings', 'graphic', 'children', 'type_def')
 
-    def __init__(self, graphic_type='', graphic_props={}):
-        # type: (str, dict) -> Entity
+    def __init__(self, entity_settings={}, graphic_type='', graphic_props={}):
+        # type: (dict, str, dict) -> Entity
         """
+        :param dict entity_settings: Settings for the Entity object
+        :keyword position: (``str``) How to determine Entity positioning: 'auto' or 'fixed'. (Default 'auto')
+                           'Auto' will determine X/Y coords based on previous Entity positions/sizes. (relative)
+                           'Fixed' puts it where you say. (absolute)
+        :keyword x: (``int``) X coord for upper-left corner of Entity
+        :keyword y: (``int``) Y coord for upper-left corner of Entity
+        :keyword size: (``str``) How to determine Entity size: 'auto' or 'fixed'. (Default 'auto')
+                                 'Auto' will determine size based on content/graphics.
+                                 'Fixed' will make it whatever you say.
+        :keyword width: (``int``) Width of Entity
+        :keyword height: (``int``) Height of Entity
         :param str graphic_type: The type of Graphic object to add
         :param dict graphic_props: Properties to apply to the Graphic object
         :return: Returns a new base Entity object, which is the basic structure that Gliffy objects
                  are built on.
         :rtype: Entity
-        :raises: :py:class:`ValueError`
         """
-        if not isinstance(graphic_type, str):
-            raise ValueError('Entity requires the graphic type (str) as its first argument.')
-        if not isinstance(graphic_props, dict):
-            raise ValueError('Entity requires the graphic props (dict) as its second argument.')
-
+        self.settings = {
+            'position': 'auto',  # auto/fixed
+            'size': 'auto',  # auto/fixed
+            '_type': 'entity'
+        }
         self.graphic = None
         self.children = []
         self.type_def = OrderedDict([
-            ('x', 0),
-            ('y', 0),
+            ('x', None),
+            ('y', None),
             ('rotation', 0),
             ('id', 0),
             ('uid', 'com.gliffy.shape.erd.erd_v1.default.entity'),
-            ('width', 0),
-            ('height', 0),
+            ('width', None),
+            ('height', None),
             ('lockAspectRatio', False),
             ('lockShape', False),
             ('order', 0),
@@ -55,22 +65,84 @@ class Entity(GliffyObject):
             ('linkMap', []),
         ])
 
-        if graphic_type:
-            # standardize for comparison
-            graphic_type = graphic_type.capitalize()
-            if graphic_type == 'Text':
-                self.set_graphic(graphics.Text(graphic_props))
-                self.type_def['order'] = 'auto'
-            elif graphic_type == 'Line':
-                self.set_graphic(graphics.Line(graphic_props))
-            else:
-                self.set_graphic(graphics.Shape(graphic_type, graphic_props))
+        self._define_graphic(graphic_type, graphic_props)
 
     def __getattr__(self, attr):
         if attr == 'set_properties' and self.graphic:
             return self.graphic.set_properties
 
         raise AttributeError('\'Entity\' object has no attribute \'{}\''.format(attr))
+
+    def _define_graphic(self, graphic_type='', graphic_props={}):
+        # type: (str, dict) -> None
+        """
+        Defines a Graphic to use with the Entity
+
+        :param str graphic_type: Type of Graphic
+        :param dict graphic_props: Graphic properties
+        """
+        if graphic_type:
+            graphic_type = graphic_type.lower()
+            self.settings['_type'] = graphic_type
+            if graphic_type == 'text':
+                self._set_graphic(graphics.Text(graphic_props))
+                self.type_def['order'] = 'auto'
+            elif graphic_type == 'line':
+                self._set_graphic(graphics.Line(graphic_props))
+            else:
+                self._set_graphic(graphics.Shape(graphic_type, graphic_props))
+
+    def _set_graphic(self, new_graphic=None):
+        # type: (graphics.Graphic) -> Entity
+        """
+        Assigns a ``Graphic`` object to the Entity & sets the Entity's uid property.
+
+        :param graphics.Graphic new_graphic: The Graphic object to assign to the Entity
+        :rtype: Entity
+        """
+        if not new_graphic or not isinstance(new_graphic, graphics.Graphic):
+            raise ValueError('Cannot assign non-Graphic object as Entity\'s graphic')
+        self.graphic = new_graphic
+        self.type_def['uid'] = self.graphic.entity_uid
+
+        return self
+
+    def set_settings(self, settings={}):
+        # type: (dict) -> Entity
+        """
+        Sets important Entity values
+
+        .. note:: The X/Y coordinates are relative to the Entity's parent.
+
+        :param dict settings: Settings to apply to the Entity
+        :keyword position: (``str``) How to determine Entity positioning: 'auto' or 'fixed'. (Default 'auto')
+                           'Auto' will determine X/Y coords based on previous Entity positions/sizes. (relative)
+                           'Fixed' puts it where you say. (absolute)
+        :keyword x: (``int``) X coord for upper-left corner of Entity
+        :keyword y: (``int``) Y coord for upper-left corner of Entity
+        :keyword size: (``str``) How to determine Entity size: 'auto' or 'fixed'. (Default 'auto')
+                                 'Auto' will determine size based on content/graphics.
+                                 'Fixed' will make it whatever you say.
+        :keyword width: (``int``) Width of Entity
+        :keyword height: (``int``) Height of Entity
+        :rtype: Entity
+        """
+        if not settings:
+            return
+
+        # these are used to help with calculations
+        t = ('auto', 'fixed')
+        for v in ('position', 'size'):
+            if v in settings:
+                settings[v] = settings[v].lower()
+                if settings[v] in t:
+                    self.settings[v] = settings[v]
+
+        # these are inherent entity values
+        for s in ['x', 'y', 'width', 'height']:
+            self.type_def[s] = settings.get(s, 0)
+
+        return self
 
     @property
     def coords(self):
@@ -174,20 +246,19 @@ class Entity(GliffyObject):
 
         return self
 
-    def set_graphic(self, new_graphic=None):
-        # type: (graphics.Graphic) -> Entity
+    def is_type(self, ent_type):
+        # type: (str) -> bool
         """
-        Assigns a ``Graphic`` object to the Entity & sets the Entity's uid property.
+        Check if the Entity is of a certain type
 
-        :param graphics.Graphic new_graphic: The Graphic object to assign to the Entity
-        :rtype: Entity
+        :param str ent_type: Type to check for
+        :rtype: bool
         """
-        if not new_graphic or not isinstance(new_graphic, graphics.Graphic):
-            raise ValueError('Cannot assign non-Graphic object as Entity\'s graphic')
-        self.graphic = new_graphic
-        self.type_def['uid'] = self.graphic.entity_uid
-
-        return self
+        # its always an entity ...
+        if ent_type.lower() in ('entity', self.settings['_type'].lower()):
+            return True
+        else:
+            return False
 
     def get_type_def(self):
         # type: () -> dict
@@ -216,7 +287,7 @@ class Group(Entity):
     Group objects allow multiple objects to be combined into a single 'linked object' for easy manipulation.
     """
 
-    __slots__ = ('children', 'graphic', 'type_def')
+    __slots__ = ('settings', 'children', 'graphic', 'type_def')
 
     def __init__(self):
         """
@@ -225,4 +296,5 @@ class Group(Entity):
         """
         super().__init__()
         self.type_def['uid'] = 'com.gliffy.shape.basic.basic_v1.default.group'
+        self.settings['_type'] = 'group'
         del self.type_def['linkMap']

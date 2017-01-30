@@ -14,10 +14,16 @@ from . import graphics
 
 class Stage(GliffyObject):
 
-    __slots__ = ('children', 'type_def')
+    __slots__ = ('children', 'type_def', 'settings')
 
     # json object definition
     def __init__(self):
+        self.settings = {
+            'x': 0,
+            'y': 0,
+            'pad_x': 0,
+            'pad_y': 0,
+        }
         self.children = []
         self.type_def = OrderedDict([
             ('contentType', 'application/gliffy+json'),
@@ -66,6 +72,96 @@ class Stage(GliffyObject):
         ])
 
     @property
+    def x(self):
+        # type: () -> int
+        """
+        :return: The current X coord value
+        :rtype: int
+        """
+        return self.settings['x']
+
+    @x.setter
+    def x(self, x):
+        # type: (int) -> Stage
+        """
+        Sets the current 'x' coordinate to be used to position a Gliffy object
+
+        The first value of 'x' is used as the starting x coordinate when graphics
+        are being drawn out.
+
+        :param int x: The next 'X' coord value to use
+        :rtype: Stage
+        """
+        self.settings['x'] = x
+        return self
+
+    @property
+    def y(self):
+        # type: () -> int
+        """
+        :return: The current Y coord value
+        :rtype: int
+        """
+        return self.settings['y']
+
+    @y.setter
+    def y(self, y):
+        # type: (int) -> Stage
+        """
+        Sets the current 'y' coordinate to be used to position a Gliffy object
+
+        The first value of 'y' is used as the starting y coordinate when graphics
+        are being drawn out.
+
+        :param int y: The next 'Y' coord value to use
+        :rtype: Stage
+        """
+        self.settings['y'] = y
+        return self
+
+    @property
+    def pad_x(self):
+        # type: () -> int
+        """
+        :return: The horizontal (X) padding between Gliffy objects
+        :rtype: int
+        """
+        return self.settings['pad_x']
+
+    @pad_x.setter
+    def pad_x(self, pad_x):
+        # type: (int) -> Stage
+        """
+        Sets the current horizontal (X) padding between Gliffy objects
+
+        :param int pad_x: The horizontal (X) padding to use
+        :rtype: Stage
+        """
+        self.settings['pad_x'] = pad_x
+        return self
+
+    @property
+    def pad_y(self):
+        # type: () -> int
+        """
+        :return: The vertical (Y) padding between Gliffy objects
+        :rtype: int
+        """
+        return self.settings['pad_y']
+
+    @pad_y.setter
+    def pad_y(self, pad_y):
+        # type: (int) -> Stage
+        """
+        Sets the current vertical (Y) padding between Gliffy objects
+
+        :param int pad_y: The vertical (Y) padding to use
+        :rtype: Stage
+        """
+        self.settings['pad_y'] = pad_y
+        return self
+
+    @property
     def node_index(self):
         # type: () -> int
         return self.type_def['stage']['nodeIndex']
@@ -79,6 +175,28 @@ class Stage(GliffyObject):
         return self
 
     @property
+    def width(self):
+        # type: () -> int
+        return self.type_def['stage']['width']
+
+    @width.setter
+    def width(self, width):
+        # type: (int) -> Stage
+        self.type_def['stage']['width'] = width
+        return self
+
+    @property
+    def height(self):
+        # type: () -> int
+        return self.type_def['stage']['height']
+
+    @height.setter
+    def height(self, height):
+        # type: (int) -> Stage
+        self.type_def['stage']['height'] = height
+        return self
+
+    @property
     def size(self):
         # type: () -> dict
         """
@@ -87,24 +205,6 @@ class Stage(GliffyObject):
         """
         stg = self.type_def['stage']
         return {'width': stg['width'], 'height': stg['height']}
-
-    @size.setter
-    def size(self, width=None, height=None):
-        # type: (int, int) -> Stage
-        """
-        Sets the Stages's width/height values
-
-        :param int width: The Stage's width
-        :param int height: The Stage's height
-        :rtype: Stage
-        """
-        stg = self.type_def['stage']
-        if width is not None:
-            stg['width'] = width
-        if height is not None:
-            stg['height'] = height
-
-        return self
 
     def add(self, children):
         # type: (Any) -> Stage

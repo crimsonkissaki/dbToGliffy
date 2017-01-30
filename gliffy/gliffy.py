@@ -5,7 +5,6 @@
 # Standard Library
 # Third Party
 # Local
-from .base import GliffyObject
 from .stage import Stage
 from .entities import Entity, Group
 from .graphics import Shape, Text, Line
@@ -29,17 +28,49 @@ class Gliffy(object):
     def __init__(self):
         # type: () -> Gliffy
         self.stage = Stage()
+        self.set_start_coords()
+        self.set_entity_padding()
 
     def __str__(self):
         # type: () -> str
         return self.to_json()
+
+    def set_start_coords(self, coords={}):
+        # type: (dict) -> Gliffy
+        """
+        Set the starting X/Y coords for the Gliffy Stage
+
+        :param dict coords: The X/Y coords to set
+        :keyword x: (``int``) X coordinate (Default 20)
+        :keyword y: (``int``) Y coordinate (Default 20)
+        :rtype: Gliffy
+        """
+        self.stage.x = coords.get('x', 20)
+        self.stage.y = coords.get('y', 20)
+
+        return self
+
+    def set_entity_padding(self, padding={}):
+        # type: (dict) -> Gliffy
+        """
+        Set the amount of horizontal (X) and vertical (Y) padding between Gliffy Entities
+
+        :param dict padding: The horizontal/vertical (X/Y) padding to use
+        :keyword pad_x: (``int``) Horizontal (X) padding (Default 20)
+        :keyword pad_y: (``int``) Vertical (Y) padding (Default 20)
+        :rtype: Gliffy
+        """
+        self.stage.pad_x = padding.get('pad_x', 20)
+        self.stage.pad_y = padding.get('pad_y', 20)
+
+        return self
 
     def entity(self):
         # type: () -> Entity
         """
         Creates a base Entity object which can be explicitly customized as you wish.
 
-        You only need to use this is you want to exert precise control over the construction
+        You only need to use this if you want to exert precise control over the construction
         of a Gliffy object.
 
         If you want to assign a graphic to this Entity you will have to manually create one

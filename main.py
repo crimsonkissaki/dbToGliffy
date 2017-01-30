@@ -113,6 +113,16 @@ if __name__ == '__main__':
     # save_to_file(gdb.make_table())
     # graphic.Text.default_family = 'Helvetica'
 
+    a = {'a': 'a.a', 'b': 'a.b'}
+    b = {'a': 'b.a'}
+    a['a'] = b.get('a', 'default')
+    a['b'] = b.get('b', a['b'])
+
+    print('\n\n')
+    print(a)
+    print('\n\n')
+
+    '''
     tn_css = {'strokeWidth': 1, 'strokeColor': '#000000'}
     tn_text_css = {'text': 'table name', 'css': {'font-size': '14px', 'font-family': 'Courier', 'bold': True}}
     cn_css = {'strokeWidth': 1, 'strokeColor': '#cccccc'}
@@ -135,6 +145,7 @@ if __name__ == '__main__':
     print('\n\n')
 
     save_to_file(str(g))
+    '''
 
     '''
     t = graphic.Text()

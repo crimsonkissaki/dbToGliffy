@@ -53,6 +53,36 @@ class Graphic(GliffyObject):
         # the modifiable Graphic properties - will be defined in child classes
         self.properties = {}
 
+    @property
+    def width(self):
+        return 0
+
+    @property
+    def height(self):
+        return 0
+
+    @property
+    def graphic_tid(self):
+        # type: () -> Any
+        """
+        :return: A tid string; None if it's null; False if there is no 'tid' property.
+        :rtype: :py:class:`Any`
+        """
+        graphic_type = self.graphic_type.lower()
+
+        return self.tids.get(graphic_type, self.tids['default'].format(graphic_type))
+
+    @property
+    def entity_uid(self):
+        # type: () -> Any
+        """
+        :return: A uid string; None if it's null.
+        :rtype: Any
+        """
+        graphic_type = self.graphic_type.lower()
+
+        return self.uids.get(graphic_type, self.uids['default'].format(graphic_type))
+
     def check_values(self, dic, keys, data_type, convert=False):
         # type: (dict, list, Any, bool) -> None
         """
@@ -78,28 +108,6 @@ class Graphic(GliffyObject):
             elif valid is not None:
                 if hex_check and not dic[k].startswith('#'):
                     dic[k] = '#'+dic[k][0:6]
-
-    @property
-    def graphic_tid(self):
-        # type: () -> Any
-        """
-        :return: A tid string; None if it's null; False if there is no 'tid' property.
-        :rtype: :py:class:`Any`
-        """
-        graphic_type = self.graphic_type.lower()
-
-        return self.tids.get(graphic_type, self.tids['default'].format(graphic_type))
-
-    @property
-    def entity_uid(self):
-        # type: () -> Any
-        """
-        :return: A uid string; None if it's null.
-        :rtype: Any
-        """
-        graphic_type = self.graphic_type.lower()
-
-        return self.uids.get(graphic_type, self.uids['default'].format(graphic_type))
 
     def get_type_def(self):
         # type: () -> dict
